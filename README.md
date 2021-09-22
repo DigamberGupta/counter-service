@@ -15,7 +15,7 @@
 - To access Swagger UI, visit to http://{host}:{port}/api-docs/ and click on the counter-api link in web browser which will redirect to the public Swagger-UI
   (https://editor.swagger.io/?url=http://{host}:{port}/api-docs/counter-api)
 
-* ![Screenshot of Counter service SwaggerUI](https://github.com/DigamberGupta/counter-api/tree/main/application/src/main/resources/static/CounterServiceSwaggerUI.PNG)
+* ![Screenshot of Counter service SwaggerUI](https://github.com/DigamberGupta/counter-service/blob/master/src/main/resources/static/CounterServiceSwaggerUI.PNG)
 
 
 ### Following useful command,
