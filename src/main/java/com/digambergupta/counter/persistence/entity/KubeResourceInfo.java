@@ -1,47 +1,39 @@
 package com.digambergupta.counter.persistence.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
+import java.util.Objects;
 
-import org.apache.commons.lang3.StringUtils;
+import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "kube_resource_info")
-@IdClass(KubeResourceId.class)
 public class KubeResourceInfo {
 
-	@Id
-	@Column(name = "kind")
-	private String kind;
-
-	@Id
-	@Column(name = "metadata_name")
-	private String metadataName;
+	@EmbeddedId
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	private KubeResourceId kubeResourceId;
 
 	@Column(name = "count")
 	private Integer count;
 
-	public String getKind() {
-		return kind;
+	public KubeResourceInfo() {
 	}
 
-	public void setKind(String kind) {
-		if (StringUtils.isEmpty(kind)) {
-			this.kind = kind;
-		}
-
-		this.kind = StringUtils.capitalize(kind.toLowerCase());
+	public KubeResourceInfo(KubeResourceId kubeResourceId, Integer count) {
+		this.kubeResourceId = kubeResourceId;
+		this.count = count;
 	}
 
-	public String getMetadataName() {
-		return metadataName;
+	public KubeResourceId getKubeResourceId() {
+		return kubeResourceId;
 	}
 
-	public void setMetadataName(String metadataName) {
-		this.metadataName = metadataName;
+	public void setKubeResourceId(KubeResourceId kubeResourceId) {
+		this.kubeResourceId = kubeResourceId;
 	}
 
 	public Integer getCount() {
@@ -50,5 +42,20 @@ public class KubeResourceInfo {
 
 	public void setCount(Integer count) {
 		this.count = count;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		KubeResourceInfo info = (KubeResourceInfo) o;
+		return Objects.equals(kubeResourceId, info.kubeResourceId) && Objects.equals(count, info.count);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(kubeResourceId, count);
 	}
 }

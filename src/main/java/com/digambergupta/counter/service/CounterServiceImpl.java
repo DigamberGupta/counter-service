@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.digambergupta.counter.api.model.ApiKubernetesCounterResponse;
 import com.digambergupta.counter.api.model.ApiSubmitKubernetesCounterDecrementRequest;
@@ -14,6 +15,7 @@ import com.digambergupta.counter.persistence.entity.KubeResourceId;
 import com.digambergupta.counter.persistence.entity.KubeResourceInfo;
 
 @Service
+@Transactional
 public class CounterServiceImpl implements CounterService {
 
 	private final KubeResourceInfoRepository repository;
@@ -26,7 +28,8 @@ public class CounterServiceImpl implements CounterService {
 	@Override
 	public ApiKubernetesCounterResponse createOrIncrementKubeCounter(ApiSubmitKubernetesCounterIncrementRequest incrementRequest) {
 
-		final KubeResourceId kubeResourceId = new KubeResourceId(incrementRequest.getKind(), incrementRequest.getMetadataName());
+		final KubeResourceId kubeResourceId = new KubeResourceId(StringUtils.capitalize(incrementRequest.getKind().toLowerCase()),
+				incrementRequest.getMetadataName());
 
 		final Optional<KubeResourceInfo> currentInfo = repository.findById(kubeResourceId);
 
@@ -45,7 +48,7 @@ public class CounterServiceImpl implements CounterService {
 	public ApiKubernetesCounterResponse decrementKubeCount(ApiSubmitKubernetesCounterDecrementRequest decrementRequest) {
 		final KubeResourceId kubeResourceId = new KubeResourceId(decrementRequest.getKind(), decrementRequest.getMetadataName());
 
-		final Optional<KubeResourceInfo> currentInfo = repository.findById(kubeResourceId);
+		Optional<KubeResourceInfo> currentInfo = repository.findById(kubeResourceId);
 
 		if (currentInfo.isPresent() && currentInfo.get().getCount() > 0) {
 			int countResult = currentInfo.get().getCount() - decrementRequest.getDecrementCountBy();
@@ -59,7 +62,7 @@ public class CounterServiceImpl implements CounterService {
 
 		final KubeResourceInfo newResourceInfo = mapToResourceInfo(decrementRequest);
 
-		return mapToCounterResponse(repository.save(newResourceInfo));
+		return mapToCounterResponse(repository.saveAndFlush(newResourceInfo));
 	}
 
 	@Override
@@ -73,8 +76,7 @@ public class CounterServiceImpl implements CounterService {
 
 	private KubeResourceInfo mapToResourceInfo(ApiSubmitKubernetesCounterDecrementRequest decrementRequest) {
 		final KubeResourceInfo newInfo = new KubeResourceInfo();
-		newInfo.setKind(decrementRequest.getKind());
-		newInfo.setMetadataName(decrementRequest.getMetadataName());
+		newInfo.setKubeResourceId(new KubeResourceId(decrementRequest.getKind(), decrementRequest.getMetadataName()));
 		newInfo.setCount(0);
 
 		return newInfo;
@@ -82,8 +84,7 @@ public class CounterServiceImpl implements CounterService {
 
 	private KubeResourceInfo mapToResourceInfo(ApiSubmitKubernetesCounterIncrementRequest incrementRequest) {
 		final KubeResourceInfo newInfo = new KubeResourceInfo();
-		newInfo.setKind(incrementRequest.getKind());
-		newInfo.setMetadataName(incrementRequest.getMetadataName());
+		newInfo.setKubeResourceId(new KubeResourceId(StringUtils.capitalize(incrementRequest.getKind().toLowerCase()), incrementRequest.getMetadataName()));
 		newInfo.setCount(incrementRequest.getIncrementCountBy() > 0 ? incrementRequest.getIncrementCountBy() : 1);
 
 		return newInfo;
@@ -91,8 +92,8 @@ public class CounterServiceImpl implements CounterService {
 
 	private ApiKubernetesCounterResponse mapToCounterResponse(KubeResourceInfo info) {
 		final ApiKubernetesCounterResponse response = new ApiKubernetesCounterResponse();
-		response.setKind(info.getKind());
-		response.setMetadataName(info.getMetadataName());
+		response.setKind(info.getKubeResourceId().getKind());
+		response.setMetadataName(info.getKubeResourceId().getMetadataName());
 		response.setCount(info.getCount());
 
 		return response;

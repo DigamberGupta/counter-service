@@ -2,8 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: counter-deployment
+  labels:
+    app: counter
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: counter

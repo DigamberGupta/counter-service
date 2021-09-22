@@ -1,13 +1,14 @@
-POST http://localhost:8080/kubernetes/counter/increment
+POST http://localhost:8082/kubernetes/counter/increment
 Content-Type: application/json
 
 {
   "kind": "deployment",
-  "metadataName": "inginx"
+  "metadataName": "counter-service",
+  "incrementCountBy": 5
 }
 
 ###
-GET http://localhost:8080/kubernetes/counter?kind="DEPLOYMENT"&metadataName="inginx"
+GET http://localhost:8082/kubernetes/counter?kind="DEPLOYMENT"&metadataName="inginx"
 Accept: application/json
 
 ###
