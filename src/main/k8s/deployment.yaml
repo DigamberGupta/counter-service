@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: counter-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: counter
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 0,  maxUnavailable: 1 }
+  template:
+    metadata:
+      labels:
+        app: counter
+    spec:
+      containers:
+        - name: counter-service
+          imagePullPolicy: IfNotPresent
+          image: digambergupta/counter-service:0.0.1
+          env:
+            - name: JAVA_MEM_OPTS
+              value: -Xms100m -Xmx500m
+          ports:
+            - name: http
+              containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: counter-service
+spec:
+  selector:
+    app: counter
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080

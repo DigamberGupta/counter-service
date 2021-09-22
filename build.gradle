@@ -1,0 +1,95 @@
+plugins {
+    id 'org.springframework.boot' version '2.5.4'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id "org.openapi.generator" version "4.3.0"
+    id 'com.palantir.docker' version '0.22.0'
+    id 'java'
+}
+
+group = project.group
+version = project.version
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation "org.springframework.boot:spring-boot-configuration-processor"
+    implementation 'com.h2database:h2'
+    implementation 'org.apache.commons:commons-lang3:3.6'
+
+    implementation("io.springfox:springfox-swagger2:" + project["springfox.version"]) {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
+    }
+
+    implementation "org.openapitools:jackson-databind-nullable:0.1.0"
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+def generateOpenApi(String apiName) {
+    def taskName = "openApiGenerate${apiName}Api"
+
+    def task = tasks.create(name: taskName, type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+        generatorName = "spring"
+        inputSpec = "$projectDir/src/main/openapi/${apiName}-api.yaml".toString()
+        outputDir = "$buildDir/generated/${apiName}-server".toString()
+        apiPackage = "com.digambergupta.${apiName}.api.controllers"
+        modelPackage = "com.digambergupta.${apiName}.api.model"
+        modelNamePrefix = "Api"
+        configOptions = [
+                library          : 'spring-mvc',
+                dateLibrary      : 'java11',
+                java8            : "true",
+                delegatePattern  : "true",
+                useBeanValidation: "true",
+                useTags          : "true",
+                configPackage    : "com.digambergupta.dummy.${apiName}" // <- unused but must be different to other generators
+        ]
+    }
+    task.inputs.dir("$projectDir/src/main/openapi")
+    task.outputs.dir("$buildDir/generated/${apiName}-server")
+    sourceSets.main.java.srcDir("$buildDir/generated/${apiName}-server/src/main/java")
+    compileJava.dependsOn task
+}
+
+generateOpenApi("counter")
+
+test {
+    useJUnitPlatform()
+}
+
+def appInfo = new Properties()
+file("src/main/resources/META-INF/application-info.properties").withInputStream { appInfo.load(it) }
+
+archivesBaseName = appInfo["application.name"]
+
+def dockerTag = "${project['dockerHub']}/${appInfo['application.name']}:${version.replace('-SNAPSHOT', '')}"
+
+docker {
+    name dockerTag
+    copySpec.from("$buildDir/libs").into("")
+    buildArgs([JAR_NAME: "${appInfo['application.name']}-${version}.jar"])
+}
+
+task writeDockerTag {
+    doLast {
+        print dockerTag
+        new File("${buildDir}/docker-tag.txt").text = dockerTag
+    }
+}
+
+
+task buildApiDocResources(type: Copy) {
+    from('src/main/openapi') {
+    }
+    into "${buildDir}/api-docs/api-docs"
+}
+
+sourceSets.main.resources.srcDir("${buildDir}/api-docs")
+processResources.dependsOn tasks.buildApiDocResources
+
