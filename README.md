@@ -20,7 +20,7 @@
 
 ### Following useful command,
 
- - ```gradlew clean build```  (to build the gradle project from the)
+ - ```gradlew clean build```  (to build the gradle project)
  - ```gradlew bootRun``` (to run the application)
  - ```gradlew docker``` (to build a docker image) 
  - ```kubectl apply -f src\main\k8s\deployment.yaml``` (to apply the kubernetes config to run your pods on kubernetes)
